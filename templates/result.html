@@ -4,48 +4,50 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Tiyatro Önerisi - Sonuç</title>
-     <style>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon.png') }}">
+    <style>
         body {
             font-family: sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Tam ekran yüksekliği */
+            min-height: 100vh;
             padding: 20px;
-            margin: 0; /* Body kenar boşluğunu sıfırla */
-
-            /* === Arka Plan Ayarları === */
-            background-image: url("{{ url_for('static', filename='arkaplan.jpg') }}"); /* static klasöründeki dosya adı */
-            background-size: cover; /* Resmi ekrana sığdır */
-            background-position: center center; /* Resmi ortala */
-            background-repeat: no-repeat; /* Tekrarlamayı önle */
-            background-attachment: fixed; /* Kaydırırken arka plan sabit kalsın */
-            /* ========================== */
+            margin: 0;
+            /* arkaplan.jpg yerine kendi dosya adını yaz */
+            background-image: url("{{ url_for('static', filename='arkaplan.jpg') }}");
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
         }
          .container {
-            background-color: rgba(255, 255, 255, 0.92); /* Hafif şeffaf beyaz arka plan */
+            background-color: rgba(255, 255, 255, 0.92);
             padding: 30px 40px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             max-width: 600px;
             width: 90%;
-            text-align: center; /* Kutu içindeki metinleri ortala */
+            text-align: center;
         }
         h1 { color: #5a0a0a; }
         h2 { color: #333; margin-top: 0;}
         p { line-height: 1.6; margin-bottom: 10px; color: #444;}
         img.play-image {
-            max-width: 200px; /* Biraz küçülttük */
+            max-width: 200px;
             height: auto;
             margin-top: 15px;
-            border: 3px solid #eee; /* Çerçeve */
+            border: 3px solid #eee;
             border-radius: 4px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        a.button-link { /* Linki buton gibi gösterelim */
+        a.button-link {
              text-decoration: none;
              color: white;
-             background-color: #007bff;
+             background-color: #a00f0f; /* Buton rengi */
              padding: 10px 15px;
              border-radius: 4px;
              margin-top: 25px;
@@ -53,16 +55,14 @@
              transition: background-color 0.3s ease;
         }
         a.button-link:hover {
-             background-color: #0056b3;
+             background-color: #7c0c0c; /* Hover rengi */
              text-decoration: none;
         }
         hr { border: 0; height: 1px; background: #ddd; margin: 25px 0; }
         .message { font-style: italic; color: #555;}
         .error-note { font-size: 0.9em; color: #888; }
     </style>
-    {# === Konfeti Kütüphanesi === #}
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-    {# ========================== #}
 </head>
 <body>
     <div class="container">
@@ -84,7 +84,6 @@
                 <img src="{{ play.image_url }}" alt="{{ play.name }} Görseli" class="play-image">
             {% endif %}
 
-            {## --- SES ÇALMA KISMI (Yerel Dosya ile) --- ##}
             <audio id="notification-sound" preload="auto" style="display: none;">
                 <source src="{{ url_for('static', filename='bildirim.mp3') }}" type="audio/mpeg">
                 Tarayıcınız ses çalmayı desteklemiyor.
@@ -94,7 +93,7 @@
                     // Ses Çalma Denemesi
                     const audio = document.getElementById('notification-sound');
                     const audioSource = audio.querySelector('source');
-                    if (audio && audioSource && audioSource.src && audioSource.src !== window.location.href) { // Basit kontrol
+                    if (audio && audioSource && audioSource.src && audioSource.src !== window.location.href) {
                          audio.play().catch(error => {
                             console.warn("Ses otomatik çalınamadı:", error);
                          });
@@ -102,36 +101,32 @@
                           console.log("Ses kaynağı yüklenemedi veya ayarlanmadı.");
                      }
 
-                    // === Konfeti Efekti ===
+                    // Konfeti Efekti
                     if (typeof confetti === 'function') {
                         confetti({
-                            particleCount: 150, // Partikül sayısı
-                            spread: 90,      // Yayılma açısı
-                            origin: { y: 0.6 } // Başlangıç noktası (dikeyde)
+                            particleCount: 180,
+                            spread: 100,
+                            origin: { y: 0.6 }
                         });
                     } else {
                         console.error("Confetti kütüphanesi yüklenemedi.");
                     }
-                    // =====================
                 });
             </script>
-             {## --- SES ÇALMA KISMI SONU --- ##}
-
-        {% elif message %}
+             {% elif message %}
             <p class="message">{{ message }}</p>
         {% else %}
              <p class="message">Bir sonuç bulunamadı veya bir hata oluştu.</p>
         {% endif %}
 
-        {% if message and not play %}
-            <p class="message error-note">{{ message }}</p>
-        {% elif message and play and fetch_error %} {# Sadece fetch error varsa notu göster #}
+        {# API'den kısmen veri çekilip hata alındıysa notu göster #}
+        {% if message and play and fetch_error %}
              <p class="message error-note">{{ message }}</p>
         {% endif %}
 
 
         <hr>
-        <a href="/" class="button-link">Yeni Arama Yap</a> {# Linki buton gibi yaptık #}
+        <a href="/" class="button-link">Yeni Arama Yap</a>
     </div>
 
 </body>

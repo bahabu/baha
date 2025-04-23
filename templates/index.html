@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>İstanbul Tiyatro Önerisi</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon.png') }}">
     <style>
         body {
             font-family: sans-serif;
@@ -13,7 +17,8 @@
             min-height: 100vh;
             padding: 20px;
             margin: 0;
-            background-image: url("{{ url_for('static', filename='arkaplan.jpg') }}"); /* Arka plan resmi */
+            /* arkaplan.jpg yerine kendi dosya adını yaz */
+            background-image: url("{{ url_for('static', filename='arkaplan.jpg') }}");
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
@@ -61,7 +66,7 @@
         .error { color: #d9534f; margin-top: 15px; font-weight: bold;}
         h1 { color: #5a0a0a; }
 
-        /* === Yükleniyor Ekranı Stili === */
+        /* Yükleniyor Ekranı Stili */
         #loading-indicator {
             display: none; /* Başlangıçta gizli */
             position: fixed;
@@ -69,26 +74,23 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7); /* Yarı şeffaf siyah arka plan */
+            background-color: rgba(0, 0, 0, 0.7);
             z-index: 1000;
-            /* Flexbox ile içindekileri ortala */
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            /* === Flexbox'ı JavaScript ile aktif edeceğiz === */
             color: white;
             font-size: 1.2em;
         }
-        #loading-indicator img { /* Yükleniyor GIF'i için stil (opsiyonel) */
+         #loading-indicator img {
              margin-bottom: 15px;
         }
-        /* === Spinner CSS'i kaldırıldı === */
 
     </style>
 </head>
 <body>
     <div id="loading-indicator">
-         <img src="{{ url_for('static', filename='loading.gif') }}" alt="Yükleniyor..." width="60"> {# Boyutu ayarlayabilirsiniz #}
+         <img src="{{ url_for('static', filename='loading.gif') }}" alt="Yükleniyor..." width="60">
         <p style="margin-top: 15px;">Oyunlar Aranıyor...</p>
         <p>Lütfen Bekleyin</p>
     </div>
@@ -97,7 +99,7 @@
         <h1>İstanbul Tiyatro Önerisi</h1>
         <p style="color: #444;">Lütfen oyun aramak istediğiniz tarihi seçin:</p>
 
-        <form method="POST" action="/" id="oyun-form"> {# Forma ID verildi #}
+        <form method="POST" action="/" id="oyun-form">
             <label for="selected_date">Tarih:</label>
             <input type="date" id="selected_date" name="selected_date" required>
             <br>
@@ -111,7 +113,6 @@
 
     <script>
         document.getElementById('oyun-form').addEventListener('submit', function() {
-            // Form gönderildiğinde yükleniyor ekranını 'flex' ile görünür yap
             document.getElementById('loading-indicator').style.display = 'flex';
         });
     </script>
