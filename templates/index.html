@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>İstanbul Tiyatro Önerisi</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+            background-image: url("{{ url_for('static', filename='arkaplan.jpg') }}"); /* Arka plan resmi */
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.92);
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        label {
+             display: block;
+             margin-bottom: 8px;
+             font-weight: bold;
+             text-align: left;
+             color: #333;
+        }
+        input[type="date"] {
+            padding: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 12px 20px;
+            cursor: pointer;
+            background-color: #a00f0f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #7c0c0c;
+        }
+        .error { color: #d9534f; margin-top: 15px; font-weight: bold;}
+        h1 { color: #5a0a0a; }
+
+        /* === Yükleniyor Ekranı Stili === */
+        #loading-indicator {
+            display: none; /* Başlangıçta gizli */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Yarı şeffaf siyah arka plan */
+            z-index: 1000;
+            /* Flexbox ile içindekileri ortala */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            /* === Flexbox'ı JavaScript ile aktif edeceğiz === */
+            color: white;
+            font-size: 1.2em;
+        }
+        #loading-indicator img { /* Yükleniyor GIF'i için stil (opsiyonel) */
+             margin-bottom: 15px;
+        }
+        /* === Spinner CSS'i kaldırıldı === */
+
+    </style>
+</head>
+<body>
+    <div id="loading-indicator">
+         <img src="{{ url_for('static', filename='loading.gif') }}" alt="Yükleniyor..." width="60"> {# Boyutu ayarlayabilirsiniz #}
+        <p style="margin-top: 15px;">Oyunlar Aranıyor...</p>
+        <p>Lütfen Bekleyin</p>
+    </div>
+
+    <div class="container">
+        <h1>İstanbul Tiyatro Önerisi</h1>
+        <p style="color: #444;">Lütfen oyun aramak istediğiniz tarihi seçin:</p>
+
+        <form method="POST" action="/" id="oyun-form"> {# Forma ID verildi #}
+            <label for="selected_date">Tarih:</label>
+            <input type="date" id="selected_date" name="selected_date" required>
+            <br>
+            <button type="submit">O Tarihteki Oyunlardan Rastgele Seç</button>
+        </form>
+
+        {% if error %}
+            <p class="error">Hata: {{ error }}</p>
+        {% endif %}
+    </div>
+
+    <script>
+        document.getElementById('oyun-form').addEventListener('submit', function() {
+            // Form gönderildiğinde yükleniyor ekranını 'flex' ile görünür yap
+            document.getElementById('loading-indicator').style.display = 'flex';
+        });
+    </script>
+
+</body>
+</html>
