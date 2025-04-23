@@ -4,7 +4,7 @@ import random
 from datetime import datetime, date
 import locale
 import sys
-import time  # Artık kullanılmıyor ama import kalabilir
+import time  # Tekrar ekleyebiliriz ama şimdilik kapalı
 from flask import Flask, render_template, request, redirect, url_for
 
 # --- Türkçe Locale Ayarı ---
@@ -17,16 +17,18 @@ except locale.Error:
         print("Uyarı: Sistemde Türkçe locale ayarlanamadı.", file=sys.stderr)
 
 
-# --- Veri Çekme Fonksiyonu (API + Limit + Görsel URL) ---
+# --- Veri Çekme Fonksiyonu (İstek Limiti KALDIRILDI) ---
 def fetch_istanbul_plays():
-    """tiyatrolar.com.tr API'sini kullanarak İstanbul oyunlarını çeker (Limitli)."""
+    """tiyatrolar.com.tr API'sini kullanarak İstanbul oyunlarını çeker (TÜMÜ)."""
     api_url = "https://tiyatrolar.com.tr/frontend/load_more_activity_via_ajax/?il=34"
     plays = []
     error_message = None
     offset = 21  # İlk dinamik yükleme offset'i
     item_count_per_request = 0
-    request_count = 0
-    MAX_REQUESTS = 6  # Zaman aşımını önlemek için istek limiti
+    # === Limit ile ilgili değişkenler kaldırıldı ===
+    # request_count = 0
+    # MAX_REQUESTS = 6
+    # ============================================
 
     headers = {
         'User-Agent':
@@ -36,25 +38,24 @@ def fetch_istanbul_plays():
         'Referer': 'https://tiyatrolar.com.tr/sahnedekiler/?il=34'
     }
 
-    print("Oyunlar API'den çekiliyor (Limitli)...")
+    print("Tüm oyunlar API'den çekiliyor...")
 
     while True:
-        if request_count >= MAX_REQUESTS:
-            print(
-                f"İstek limiti ({MAX_REQUESTS}) doldu. Oyun çekme durduruldu.")
-            break
+        # === İstek limiti kontrolü kaldırıldı ===
+        # if request_count >= MAX_REQUESTS:
+        #     print(f"İstek limiti ({MAX_REQUESTS}) doldu. Oyun çekme durduruldu.")
+        #     break
+        # =====================================
 
         payload = {'offset': offset, 'activity_type_id': '1'}
-        request_count += 1
-        print(
-            f"İstek #{request_count} gönderiliyor: offset={offset}, activity_type_id=1"
-        )
+        # request_count += 1 # Kaldırıldı
+        print(f"İstek gönderiliyor: offset={offset}, activity_type_id=1")
 
         try:
             response = requests.post(api_url,
                                      data=payload,
                                      headers=headers,
-                                     timeout=20)
+                                     timeout=30)  # Timeout biraz artırılabilir
             response.raise_for_status()
 
             try:
@@ -71,7 +72,7 @@ def fetch_istanbul_plays():
                     print(
                         f"Offset {offset} yanıtı başarılı ama HTML içeriği boş. Daha fazla oyun yok."
                     )
-                    break
+                    break  # Daha fazla oyun yoksa döngüyü bitir
 
                 soup_fragment = BeautifulSoup(html_fragment_str, 'html.parser')
                 new_items = soup_fragment.select('.theater-item')
@@ -80,7 +81,7 @@ def fetch_istanbul_plays():
                     print(
                         f"Offset {offset} HTML yanıtı içinde '.theater-item' bulunamadı veya daha fazla oyun yok."
                     )
-                    break
+                    break  # Yeni item yoksa döngüyü bitir (API sonu)
 
                 print(f"{len(new_items)} yeni oyun bulundu.")
                 item_count_per_request = len(new_items)
@@ -90,7 +91,7 @@ def fetch_istanbul_plays():
                     formatted_time = None
                     name = None
                     venue = None
-                    image_url = None  # Görsel URL'si için değişken
+                    image_url = None
 
                     try:
                         name_tag = item.select_one('h3 a')
@@ -102,8 +103,7 @@ def fetch_istanbul_plays():
                         img_tag = item.select_one('figure img')
                         if img_tag:
                             if 'src' in img_tag.attrs:
-                                image_url = img_tag[
-                                    'src']  # Görsel URL'sini al
+                                image_url = img_tag['src']
                             if 'alt' in img_tag.attrs:
                                 alt_text = img_tag['alt'].strip()
                                 parts = alt_text.split()
@@ -122,7 +122,7 @@ def fetch_istanbul_plays():
                                 "venue": venue,
                                 "date": parsed_date,
                                 "time": formatted_time,
-                                "image_url": image_url  # Görsel URL'sini ekle
+                                "image_url": image_url
                             })
 
                     except Exception as e:
@@ -130,7 +130,7 @@ def fetch_istanbul_plays():
                         continue
 
                 offset += item_count_per_request
-                # time.sleep(0.5) # Kaldırıldı
+                # time.sleep(0.2) # İstersen çok kısa bir bekleme eklenebilir
 
             else:
                 error_msg = data.get(
@@ -138,29 +138,29 @@ def fetch_istanbul_plays():
                 print(
                     f"API başarısız yanıt döndürdü (offset={offset}): sta={data.get('sta')}, msg={error_msg}"
                 )
-                break
+                break  # Başarısız yanıtta döngüden çık
 
         except requests.exceptions.Timeout:
             error_message = f"API isteği zaman aşımına uğradı (offset={offset}). Daha önce bulunanlar listeleniyor."
             print(error_message, file=sys.stderr)
-            break
+            break  # Timeout olursa döngüden çık
         except requests.exceptions.RequestException as e:
             if e.response is not None:
                 error_message = f"API isteği başarısız oldu (offset={offset}): {e.response.status_code} {e.response.reason}. Daha önce bulunanlar listeleniyor."
             else:
                 error_message = f"API isteği başarısız oldu (offset={offset}): {e}. Daha önce bulunanlar listeleniyor."
             print(error_message, file=sys.stderr)
-            break
+            break  # İstek hatası olursa döngüden çık
         except Exception as e:
             error_message = f"Veri işlenirken beklenmedik hata (offset={offset}): {e}. Daha önce bulunanlar listeleniyor."
             print(error_message, file=sys.stderr)
-            break
+            break  # Diğer hatalarda döngüden çık
 
-    print(f"Toplam {len(plays)} oyun çekildi (Limit: {MAX_REQUESTS} istek).")
+    print(f"Toplam {len(plays)} oyun çekildi.")
     return plays, error_message
 
 
-# --- Flask Uygulaması ---
+# --- Flask Uygulaması (Değişiklik Yok) ---
 app = Flask(__name__)
 app.jinja_env.globals['locale'] = locale
 
@@ -196,7 +196,7 @@ def index():
             ]
 
             if not filtered_plays:
-                message = f"{selected_date.strftime('%d.%m.%Y')} tarihinde (API'den çekilen oyunlar içinde) gösterimde olan oyun bulunamadı."
+                message = f"{selected_date.strftime('%d.%m.%Y')} tarihinde (API'den çekilen tüm oyunlar içinde) gösterimde olan oyun bulunamadı."
                 if result_message: message += f" (Not: {result_message})"
                 return render_template('result.html', message=message)
             else:
@@ -216,3 +216,5 @@ def index():
     return render_template('index.html')
 
 
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')
