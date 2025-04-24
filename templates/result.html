@@ -17,13 +17,21 @@
             min-height: 100vh;
             padding: 20px;
             margin: 0;
-            /* arkaplan.jpg yerine kendi dosya adını yaz */
+            /* Varsayılan arka plan */
             background-image: url("{{ url_for('static', filename='arkaplan.jpg') }}");
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
             background-attachment: fixed;
+            transition: background-image 0.5s ease-in-out; /* Arka plan geçişi için */
         }
+        /* === 7 Mayıs için Özel Arka Plan === */
+        body.special-day-bg {
+            /* dogumgunu.jpg yerine kendi dosya adını yaz */
+            background-image: url("{{ url_for('static', filename='dogumgunu.jpg') }}");
+        }
+        /* ================================ */
+
          .container {
             background-color: rgba(255, 255, 255, 0.92);
             padding: 30px 40px;
@@ -47,7 +55,7 @@
         a.button-link {
              text-decoration: none;
              color: white;
-             background-color: #a00f0f; /* Buton rengi */
+             background-color: #a00f0f;
              padding: 10px 15px;
              border-radius: 4px;
              margin-top: 25px;
@@ -55,19 +63,37 @@
              transition: background-color 0.3s ease;
         }
         a.button-link:hover {
-             background-color: #7c0c0c; /* Hover rengi */
+             background-color: #7c0c0c;
              text-decoration: none;
         }
         hr { border: 0; height: 1px; background: #ddd; margin: 25px 0; }
         .message { font-style: italic; color: #555;}
         .error-note { font-size: 0.9em; color: #888; }
+        .birthday-message { /* Doğum günü mesajı için özel stil */
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #e91e63; /* Pembe tonu */
+            margin-top: 10px;
+            margin-bottom: 25px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
-<body>
+{# === Body'ye özel class ekleme === #}
+<body class="{{ 'special-day-bg' if is_special_day else '' }}">
+{# ============================= #}
     <div class="container">
         <h1>Oyun Önerisi Sonucu</h1>
 
+        {# === 7 MAYIS ÖZEL MESAJI === #}
+        {% if is_special_day %}
+            <p class="birthday-message">İYİ Kİ DOĞDUN AŞKIM ❤️</p>
+        {% endif %}
+        {# ========================== #}
+
+
+        {# === Oyun varsa göster (7 Mayıs olsa bile) === #}
         {% if play %}
             <h2>{{ play.name }}</h2>
             <p>
@@ -84,46 +110,70 @@
                 <img src="{{ play.image_url }}" alt="{{ play.name }} Görseli" class="play-image">
             {% endif %}
 
-            <audio id="notification-sound" preload="auto" style="display: none;">
-                <source src="{{ url_for('static', filename='bildirim.mp3') }}" type="audio/mpeg">
-                Tarayıcınız ses çalmayı desteklemiyor.
-            </audio>
-            <script>
-                document.addEventListener('DOMContentLoaded', (event) => {
-                    // Ses Çalma Denemesi
-                    const audio = document.getElementById('notification-sound');
-                    const audioSource = audio.querySelector('source');
-                    if (audio && audioSource && audioSource.src && audioSource.src !== window.location.href) {
-                         audio.play().catch(error => {
-                            console.warn("Ses otomatik çalınamadı:", error);
-                         });
-                     } else {
-                          console.log("Ses kaynağı yüklenemedi veya ayarlanmadı.");
-                     }
-
-                    // Konfeti Efekti
-                    if (typeof confetti === 'function') {
-                        confetti({
-                            particleCount: 180,
-                            spread: 100,
-                            origin: { y: 0.6 }
-                        });
-                    } else {
-                        console.error("Confetti kütüphanesi yüklenemedi.");
-                    }
-                });
-            </script>
-             {% elif message %}
+        {# === Oyun yoksa mesajı göster (7 Mayıs için özel mesaj zaten yukarıda) === #}
+        {% elif message and not is_special_day %} {# Özel gün değilse oyun yok mesajını göster #}
             <p class="message">{{ message }}</p>
-        {% else %}
+        {% elif not play and not message and not is_special_day %} {# Normalde buraya düşmemeli ama fallback #}
              <p class="message">Bir sonuç bulunamadı veya bir hata oluştu.</p>
         {% endif %}
+        {# ====================================================== #}
 
-        {# API'den kısmen veri çekilip hata alındıysa notu göster #}
-        {% if message and play and fetch_error %}
-             <p class="message error-note">{{ message }}</p>
+
+        {# API'den kısmen veri çekilip hata alındıysa notu göster (her durumda görünebilir) #}
+        {% if message and play %} {# `message` burada `result_message` (fetch_error) oluyor #}
+             <p class="message error-note">(Not: {{ message }})</p>
+        {% elif message and not play and not is_special_day %} {# Oyun yoksa ve özel gün değilse hata notunu göster #}
+             <p class="message error-note">(Not: {{ message }})</p>
         {% endif %}
 
+
+        {# === Ses ve Konfeti Scriptleri === #}
+        <audio id="notification-sound" preload="auto" style="display: none;">
+            <source src="{{ url_for('static', filename='bildirim.mp3') }}" type="audio/mpeg">
+            Tarayıcınız ses çalmayı desteklemiyor.
+        </audio>
+        <script>
+            // Flask'tan gelen özel gün bayrağını JavaScript'e aktar
+            const isSpecialDay = {{ is_special_day | default(false) | tojson }};
+
+            document.addEventListener('DOMContentLoaded', (event) => {
+                // --- Ses Çalma ---
+                 // Mobil kısıtlamaları nedeniyle otomatik çalma yorumda
+                /*
+                const audio = document.getElementById('notification-sound');
+                const audioSource = audio.querySelector('source');
+                if (audio && audioSource && audioSource.src && audioSource.src !== window.location.href) {
+                     audio.play().catch(error => { console.warn("Ses otomatik çalınamadı:", error); });
+                 } else { console.log("Ses kaynağı yüklenemedi veya ayarlanmadı."); }
+                */
+
+                // --- Konfeti Efekti ---
+                if (typeof confetti === 'function') {
+                    if (isSpecialDay) {
+                        // === SÜREKLİ KONFETİ YAĞMURU (15 Saniye) ===
+                        var duration = 15 * 1000;
+                        var animationEnd = Date.now() + duration;
+                        var defaults = { startVelocity: 25, spread: 360, ticks: 50, zIndex: 0, gravity: 0.5, scalar: 0.8, colors: ['#FFC0CB', '#FF69B4', '#FF1493', '#DB7093', '#ffffff'] }; // Pembe ve beyaz tonları
+
+                        function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+                        var interval = setInterval(function() {
+                            var timeLeft = animationEnd - Date.now();
+                            if (timeLeft <= 0) { return clearInterval(interval); }
+                            var particleCount = 40 * (timeLeft / duration); // Zamanla azalan partikül
+                            // Ekranın üstünden rastgele yağdır
+                            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.9), y: Math.random() - 0.2 } }));
+                        }, 200); // Her 200ms'de bir ateşle
+                        // =======================================
+                    } else if (document.querySelector('h2')) { // Oyun bulunduysa (h2 etiketi varsa) normal patlama
+                        // confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } }); // İstersen normal günler için bunu açabilirsin
+                    }
+                } else {
+                    console.error("Confetti kütüphanesi yüklenemedi.");
+                }
+            });
+        </script>
+        {# ============================ #}
 
         <hr>
         <a href="/" class="button-link">Yeni Arama Yap</a>
