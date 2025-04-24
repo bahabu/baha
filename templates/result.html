@@ -17,38 +17,42 @@
             min-height: 100vh;
             padding: 20px;
             margin: 0;
-            /* Varsayılan arka plan */
+             /* arkaplan.jpg yerine kendi dosya adını yaz */
             background-image: url("{{ url_for('static', filename='arkaplan.jpg') }}");
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
             background-attachment: fixed;
-            transition: background-image 0.5s ease-in-out; /* Arka plan geçişi için */
+            transition: background-image 0.5s ease-in-out;
         }
-        /* === 7 Mayıs için Özel Arka Plan === */
+        /* 7 Mayıs için Özel Arka Plan */
         body.special-day-bg {
-            /* dogumgunu.jpg yerine kendi dosya adını yaz */
-            background-image: url("{{ url_for('static', filename='dogumgunu.jpg') }}");
+             /* !!! BURADAKİ 'dogumgunu.png' ADINI KENDİ YÜKLEDİĞİN DOSYA ADIYLA DEĞİŞTİR !!! */
+            background-image: url("{{ url_for('static', filename='dogumgunu.png') }}");
         }
-        /* ================================ */
 
          .container {
-            background-color: rgba(255, 255, 255, 0.92);
+            background-color: transparent; /* Şeffaf arka plan */
             padding: 30px 40px;
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             max-width: 600px;
             width: 90%;
             text-align: center;
+            color: white; /* Beyaz metin */
         }
-        h1 { color: #5a0a0a; }
-        h2 { color: #333; margin-top: 0;}
-        p { line-height: 1.6; margin-bottom: 10px; color: #444;}
+         /* Okunabilirlik için metinlere gölge */
+        h1, h2, p, .birthday-message, .message, .error-note, a.button-link {
+             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+        }
+
+        h1 { color: #ffdddd; }
+        h2 { color: #ffffff; margin-top: 0;}
+        p { line-height: 1.6; margin-bottom: 10px; color: #f0f0f0;}
         img.play-image {
             max-width: 200px;
             height: auto;
             margin-top: 15px;
-            border: 3px solid #eee;
+            border: 3px solid rgba(255, 255, 255, 0.5);
             border-radius: 4px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
@@ -61,84 +65,76 @@
              margin-top: 25px;
              display: inline-block;
              transition: background-color 0.3s ease;
+             border: 1px solid rgba(255,255,255,0.5);
         }
         a.button-link:hover {
              background-color: #7c0c0c;
              text-decoration: none;
         }
-        hr { border: 0; height: 1px; background: #ddd; margin: 25px 0; }
-        .message { font-style: italic; color: #555;}
-        .error-note { font-size: 0.9em; color: #888; }
-        .birthday-message { /* Doğum günü mesajı için özel stil */
+        hr { border: 0; height: 1px; background: rgba(255, 255, 255, 0.3); margin: 25px 0; }
+        .message { font-style: italic; color: #f0f0f0;}
+        .error-note { font-size: 0.9em; color: #ccc; }
+        .birthday-message {
             font-size: 1.8em;
             font-weight: bold;
-            color: #e91e63; /* Pembe tonu */
+            color: #ffc0cb;
             margin-top: 10px;
             margin-bottom: 25px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
-{# === Body'ye özel class ekleme === #}
 <body class="{{ 'special-day-bg' if is_special_day else '' }}">
-{# ============================= #}
     <div class="container">
         <h1>Oyun Önerisi Sonucu</h1>
 
-        {# === 7 MAYIS ÖZEL MESAJI === #}
+        {# 7 MAYIS ÖZEL MESAJI #}
         {% if is_special_day %}
             <p class="birthday-message">İYİ Kİ DOĞDUN AŞKIM ❤️</p>
         {% endif %}
-        {# ========================== #}
 
 
-        {# === Oyun varsa göster (7 Mayıs olsa bile) === #}
+        {# Oyun varsa göster (7 Mayıs olsa bile) #}
         {% if play %}
             <h2>{{ play.name }}</h2>
-            <p>
-                <strong>Tarih:</strong>
-                {% if play.date %}
-                    {{ play.date.strftime('%d %B %Y') }}
-                {% else %}
-                    Bilinmiyor
-                {% endif %}
-            </p>
+            <p><strong>Tarih:</strong> {% if play.date %}{{ play.date.strftime('%d %B %Y') }}{% else %}Bilinmiyor{% endif %}</p>
             <p><strong>Saat:</strong> {{ play.time or 'Bilinmiyor' }}</p>
             <p><strong>Mekan:</strong> {{ play.venue or 'Bilinmiyor' }}</p>
             {% if play.image_url %}
                 <img src="{{ play.image_url }}" alt="{{ play.name }} Görseli" class="play-image">
             {% endif %}
 
-        {# === Oyun yoksa mesajı göster (7 Mayıs için özel mesaj zaten yukarıda) === #}
-        {% elif message and not is_special_day %} {# Özel gün değilse oyun yok mesajını göster #}
-            <p class="message">{{ message }}</p>
-        {% elif not play and not message and not is_special_day %} {# Normalde buraya düşmemeli ama fallback #}
-             <p class="message">Bir sonuç bulunamadı veya bir hata oluştu.</p>
-        {% endif %}
-        {# ====================================================== #}
-
-
-        {# API'den kısmen veri çekilip hata alındıysa notu göster (her durumda görünebilir) #}
-        {% if message and play %} {# `message` burada `result_message` (fetch_error) oluyor #}
-             <p class="message error-note">(Not: {{ message }})</p>
-        {% elif message and not play and not is_special_day %} {# Oyun yoksa ve özel gün değilse hata notunu göster #}
-             <p class="message error-note">(Not: {{ message }})</p>
+        {# Oyun yoksa mesajı göster #}
+        {% elif message %} {# Flask'tan gelen genel mesaj (API hatası veya normal 'bulunamadı') #}
+             <p class="message">{{ message }}</p>
+        {# Özel gün ama oyun bulunamadıysa (API'den gelen listede yoksa) özel mesaj göster #}
+        {% elif is_special_day and not play %}
+             <p class="message">Bugün için listede özel bir oyun bulunamadı, ama harika bir gün geçir! 🎉</p>
+        {# Diğer tüm durumlar (normal gün, oyun yok, message yok - fallback) #}
+        {% elif not play %}
+              <p class="message">Bir sonuç bulunamadı veya bir hata oluştu.</p>
         {% endif %}
 
 
-        {# === Ses ve Konfeti Scriptleri === #}
+        {# API'den kısmen veri çekilip hata alındıysa notu göster #}
+        {% if message and play %}
+             <p class="message error-note">(Not: {{ message }})</p>
+        {% elif message and not play and not is_special_day %}
+             <p class="message error-note">(Not: {{ message }})</p>
+        {% endif %}
+
+
+        {# Ses ve Konfeti Scriptleri #}
         <audio id="notification-sound" preload="auto" style="display: none;">
-            <source src="{{ url_for('static', filename='bildirim.mp3') }}" type="audio/mpeg">
+             <source src="{{ url_for('static', filename='bildirim.mp3') }}" type="audio/mpeg">
             Tarayıcınız ses çalmayı desteklemiyor.
         </audio>
         <script>
-            // Flask'tan gelen özel gün bayrağını JavaScript'e aktar
             const isSpecialDay = {{ is_special_day | default(false) | tojson }};
 
             document.addEventListener('DOMContentLoaded', (event) => {
-                // --- Ses Çalma ---
-                 // Mobil kısıtlamaları nedeniyle otomatik çalma yorumda
+                // --- Ses Çalma (Yorumda) ---
                 /*
                 const audio = document.getElementById('notification-sound');
                 const audioSource = audio.querySelector('source');
@@ -150,27 +146,21 @@
                 // --- Konfeti Efekti ---
                 if (typeof confetti === 'function') {
                     if (isSpecialDay) {
-                        // === SÜREKLİ KONFETİ YAĞMURU (15 Saniye) ===
+                        // Sürekli Konfeti Yağmuru (Arttırılmış)
                         var duration = 15 * 1000;
                         var animationEnd = Date.now() + duration;
-                        var defaults = { startVelocity: 25, spread: 360, ticks: 50, zIndex: 0, gravity: 0.5, scalar: 0.8, colors: ['#FFC0CB', '#FF69B4', '#FF1493', '#DB7093', '#ffffff'] }; // Pembe ve beyaz tonları
-
+                        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100, gravity: 0.6, scalar: 0.9, colors: ['#FFC0CB', '#FF69B4', '#FF1493', '#DB7093', '#ffffff', '#fde74c', '#f8a145'] };
                         function randomInRange(min, max) { return Math.random() * (max - min) + min; }
-
                         var interval = setInterval(function() {
                             var timeLeft = animationEnd - Date.now();
                             if (timeLeft <= 0) { return clearInterval(interval); }
-                            var particleCount = 40 * (timeLeft / duration); // Zamanla azalan partikül
-                            // Ekranın üstünden rastgele yağdır
-                            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.9), y: Math.random() - 0.2 } }));
-                        }, 200); // Her 200ms'de bir ateşle
-                        // =======================================
-                    } else if (document.querySelector('h2')) { // Oyun bulunduysa (h2 etiketi varsa) normal patlama
-                        // confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } }); // İstersen normal günler için bunu açabilirsin
+                            var particleCount = 150 * (timeLeft / duration); // Yoğunluk
+                            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+                        }, 150); // Sıklık
                     }
-                } else {
-                    console.error("Confetti kütüphanesi yüklenemedi.");
-                }
+                    // Normal gün için konfeti istenirse buraya eklenebilir
+                } else { console.error("Confetti kütüphanesi yüklenemedi."); }
             });
         </script>
         {# ============================ #}
